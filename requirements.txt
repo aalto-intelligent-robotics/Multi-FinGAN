@@ -1,0 +1,17 @@
+easydict==1.9
+cvxpy==1.1.3
+pyquaternion==0.9.5
+pandas==1.0.3
+numpy==1.13.3
+trimesh==3.6.30
+cvxpylayers==0.1.4
+cvxopt==1.2.5
+torch==1.5.0
+joblib==0.14.1
+numpy_quaternion==2020.5.19.15.27.24
+torchvision==0.6.0
+mayavi==4.7.1
+Pillow==8.1.2
+PyYAML==5.4.1
+quaternion==3.5.2.post4
+tensorboardX==2.1

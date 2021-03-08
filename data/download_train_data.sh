@@ -1,0 +1,8 @@
+mkdir -p $1"/train_data/"
+mkdir -p $1"/meshes/"
+wget --no-check-certificate -r 'https://drive.google.com/uc?export=download&id=1nPV-L2oG0g4h1lJ5hszsGpRCul1BcwTU' -O $1"ycb_meshes.zip"
+unzip -n -q $1"ycb_meshes.zip" -d $1"/meshes/"
+rm $1"ycb_meshes.zip"
+wget --no-check-certificate -r 'https://drive.google.com/uc?export=download&id=1X2jwA7wCDVb4J9r-HZWXtRBKD7fa2sOO' -O $1"graspit_training_grasps.zip"
+unzip -n -q $1"graspit_training_grasps.zip" -d $1"/train_data/"
+rm $1"graspit_training_grasps.zip"

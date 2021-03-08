@@ -1,0 +1,10 @@
+checkpoints/
+*.swp
+__pycache__
+*/__pycache__
+graspit_grasps/
+data/meshes
+data/train_data
+data/test_data
+.vscode
+results/*
