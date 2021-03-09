@@ -100,7 +100,6 @@ class TrainOptions(BaseOptions):
         else:
             self.set_epoch()
             self.opt.load_network = False
-        self.opt.dataset_mode = "ycb_synthetic_one_object"
         torch.manual_seed(self.opt.manual_seed)
         np.random.seed(self.opt.manual_seed)
         # get and set gpus
