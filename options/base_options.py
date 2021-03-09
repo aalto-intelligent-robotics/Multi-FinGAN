@@ -65,8 +65,7 @@ class BaseOptions():
         pass
 
     def set_folder_name(self):
-        folder_name = self.opt.dataset_mode
-        folder_name += "_views_"+str(self.opt.num_viewpoints_per_object)
+        folder_name = "views_"+str(self.opt.num_viewpoints_per_object)
         if not self.opt.no_classification_loss:
             folder_name += "_classification_" + \
                 str(int(self.opt.lambda_G_classification))
