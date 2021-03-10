@@ -106,6 +106,7 @@ class TrainOptions(BaseOptions):
         if self.opt.ablation_study:
             self.opt.checkpoints_dir = self.opt.checkpoints_dir+"/ablation_study/"
 
+        self.opt.dataset_name = "ycb"
         self.get_set_gpus()
 
         args = vars(self.opt)

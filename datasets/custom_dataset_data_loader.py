@@ -11,7 +11,7 @@ class CustomDatasetDataLoader:
 
     def create_dataset(self):
         self.dataset = DatasetFactory.get_by_name(
-            self.opt.dataset_mode, self.opt, self.mode)
+            self.opt.dataset_name, self.opt, self.mode)
         if hasattr(self.dataset, 'collate_fn'):
             self.dataloader = torch.utils.data.DataLoader(
                 self.dataset,

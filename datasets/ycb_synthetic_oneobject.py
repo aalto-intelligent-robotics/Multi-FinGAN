@@ -40,7 +40,6 @@ class Dataset(DatasetBase):
         # Get object at random:
 
         id_obj, viewpoint_idx = self.split_index(index)
-        id_grasp = np.random.randint(0, len(self.all_grasp_rotations[id_obj]))
 
         if self.should_pregenerate_data:
             color, random_rot, all_object_vertices, all_obj_verts_resampled800, all_obj_faces = self.pregenerated_data_per_object[
@@ -49,30 +48,36 @@ class Dataset(DatasetBase):
             color, random_rot, all_object_vertices, all_obj_verts_resampled800, all_obj_faces = self.generate_data(
                 id_obj)
 
-        # Get random grasp:
-        grasp_rot = self.all_grasp_rotations[id_obj][id_grasp]
-        grasp_trans = self.all_grasp_translations[id_obj][id_grasp]
-        grasp_dof = self.all_grasp_hand_configurations[id_obj][id_grasp]
+        if self.mode == "val":
+            # Val models are both train and test models but from new viewpoints
+            all_grasp_taxonomies = []
+            grasp_repr = []
+            grasp_pose = []
+        else:
+
+            # Get random grasp:
+            id_grasp = np.random.randint(
+                0, len(self.all_grasp_rotations[id_obj]))
+            grasp_rot = self.all_grasp_rotations[id_obj][id_grasp]
+            grasp_trans = self.all_grasp_translations[id_obj][id_grasp]
+            grasp_dof = self.all_grasp_hand_configurations[id_obj][id_grasp]
+            # Taxonomy ground truth:
+            all_grasp_taxonomies = self.all_grasp_taxonomies[id_obj]
+            grasp_rot = pyquaternion.Quaternion(
+                np.array(grasp_rot)[[3, 0, 1, 2]]).rotation_matrix
+            grasp_pose = np.eye(4)
+            grasp_pose[:3, :3] = grasp_rot
+            grasp_pose[:3, 3] = grasp_trans
+
+            grasp_to_object_transformation = np.eye(4)
+            grasp_to_object_transformation[:3, :3] = random_rot
+            grasp_pose = np.matmul(grasp_to_object_transformation, grasp_pose)
+            grasp_repr = util.joints_to_grasp_representation(grasp_dof)
 
         # Normalize:
         img = color[0].transpose(1, 2, 0)/256
         img = img - self.means_rgb
         img = img / self.std_rgb
-
-        # Taxonomy ground truth:
-        all_grasp_taxonomies = self.all_grasp_taxonomies[id_obj]
-
-        grasp_rot = pyquaternion.Quaternion(
-            np.array(grasp_rot)[[3, 0, 1, 2]]).rotation_matrix
-        grasp_pose = np.eye(4)
-        grasp_pose[:3, :3] = grasp_rot
-        grasp_pose[:3, 3] = grasp_trans
-
-        grasp_to_object_transformation = np.eye(4)
-        grasp_to_object_transformation[:3, :3] = random_rot
-        grasp_pose = np.matmul(grasp_to_object_transformation, grasp_pose)
-
-        grasp_repr = util.joints_to_grasp_representation(grasp_dof)
 
         # pack data
         sample = {'rgb_img': img,
@@ -115,7 +120,6 @@ class Dataset(DatasetBase):
                 if i.split("/")[-3] in j:
                     self.models_simplified.append(j)
                     break
-
         self.models_simplified = np.asarray(self.models_simplified)
         self.training_models = self.models_original.shape[0]
         for i in range(self.training_models):
@@ -151,14 +155,16 @@ class Dataset(DatasetBase):
             available_taxonomy = np.zeros(7)
             for file in grasp_files:
                 data = pickle.load(open(file, 'rb'), encoding='latin')
-                object_grasp_translations.append(data['pose'][:3] - object_center)
+                object_grasp_translations.append(
+                    data['pose'][:3] - object_center)
                 object_grasp_rotations.append(data['pose'][3:])
                 object_grasp_hand_configurations.append(data['joints'])
                 available_taxonomy[data['taxonomy'] - 1] += 1
 
             self.all_grasp_translations.append(object_grasp_translations)
             self.all_grasp_rotations.append(object_grasp_rotations)
-            self.all_grasp_hand_configurations.append(object_grasp_hand_configurations)
+            self.all_grasp_hand_configurations.append(
+                object_grasp_hand_configurations)
             self.all_grasp_taxonomies.append((available_taxonomy > 0)*1)
 
         self.resampled_objects_800verts = np.asarray(

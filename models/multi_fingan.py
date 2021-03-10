@@ -74,7 +74,8 @@ class Model(BaseModel):
         self.grasp_generator.init_weights()
 
         if len(self.gpu_ids) > 1:
-            self.image_encoder_and_grasp_predictor = torch.nn.DataParallel(self.image_encoder_and_grasp_predictor, device_ids=self.gpu_ids)
+            self.image_encoder_and_grasp_predictor = torch.nn.DataParallel(
+                self.image_encoder_and_grasp_predictor, device_ids=self.gpu_ids)
             self.grasp_generator = torch.nn.DataParallel(self.grasp_generator,
                                                          device_ids=self.gpu_ids)
         self.image_encoder_and_grasp_predictor.to(self.device)
@@ -88,7 +89,8 @@ class Model(BaseModel):
             self.discriminator = self.create_discriminator()
             self.discriminator.init_weights()
             if len(self.gpu_ids) > 1:
-                self.discriminator = torch.nn.DataParallel(self.discriminator, device_ids=self.gpu_ids)
+                self.discriminator = torch.nn.DataParallel(
+                    self.discriminator, device_ids=self.gpu_ids)
             self.discriminator.to(self.device)
 
     def create_image_encoder_and_grasp_predictor(self):
@@ -168,7 +170,7 @@ class Model(BaseModel):
         self.input_rgb_img = data_input['rgb_img'].float().permute(
             0, 3, 1, 2).contiguous()
         self.input_object_id = data_input['object_id']
-        if self.opt.dataset_mode == 'ycb_synthetic_one_object':
+        if self.opt.dataset_name == 'ycb':
             self.input_taxonomy = data_input['taxonomy'].float()
         else:
             self.input_taxonomy = data_input['taxonomy']
@@ -356,7 +358,8 @@ class Model(BaseModel):
                     self.gradient_accumulation_current_step = 0
 
     def evaluate_prediction(self, prediction):
-        self.loss_g_CE = self.criterion_CE(prediction, self.input_taxonomy)*self.opt.lambda_G_classification
+        self.loss_g_CE = self.criterion_CE(
+            prediction, self.input_taxonomy)*self.opt.lambda_G_classification
         thresholded_predictions = (torch.sigmoid(prediction) > 0.5).long()
         self.acc_g = (thresholded_predictions.cpu().data.numpy(
         ) == self.input_taxonomy.cpu().data.numpy()).mean()
@@ -396,9 +399,12 @@ class Model(BaseModel):
             # accordingly
             random_rots = torch.FloatTensor(self.approach_orientation).to(
                 self.device)
-            translation_in = self.input_center_objects.repeat(self.opt.num_grasps_to_sample, 1)
-            img_representations = img_representations.repeat(self.opt.num_grasps_to_sample, 1)
-            hand_representations = hand_representations.repeat(self.opt.num_grasps_to_sample, 1)
+            translation_in = self.input_center_objects.repeat(
+                self.opt.num_grasps_to_sample, 1)
+            img_representations = img_representations.repeat(
+                self.opt.num_grasps_to_sample, 1)
+            hand_representations = hand_representations.repeat(
+                self.opt.num_grasps_to_sample, 1)
         else:
             axis_angles = util.rotm_to_axis_angles(
                 self.input_hand_gt_pose[:, :3, :3], self.device)
@@ -410,11 +416,13 @@ class Model(BaseModel):
                                                                 random_rots, translation_in)
         rot_matrix = util.axis_angles_to_rotation_matrix(R)
 
-        hand_configuration, hand_configuration_unconstrained = self.constrain_hand(hand_configuration)
+        hand_configuration, hand_configuration_unconstrained = self.constrain_hand(
+            hand_configuration)
         # Batched hand refinement is only possible when not training, i.e. when we do the simulation experiments in https://arxiv.org/pdf/2012.09696.pdf.
         # The reason for this is because in training mode we operate with much higher batch sizes and the batched hand-refinement layer cannot handle large
         # batch sizes
-        self.finger_refinement(hand_configuration, rot_matrix, T, batched=not train)
+        self.finger_refinement(
+            hand_configuration, rot_matrix, T, batched=not train)
 
         self.display_hand_gt_pose = self.input_hand_gt_pose
         self.display_hand_gt_rep = self.input_hand_gt_rep
@@ -430,13 +438,15 @@ class Model(BaseModel):
             self.invalid_hand_conf = util.valid_hand_conf(util.rad2deg(
                 hand_configuration), self.device).squeeze()
             self.delta_R = util.axis_angle_distance(random_rots, R).mean()
-            self.delta_HR = (hand_representations-hand_configuration).abs().mean()
+            self.delta_HR = (hand_representations -
+                             hand_configuration).abs().mean()
 
             points_3d, points_3d_area = util.concatenate_barret_vertices_and_vertice_areas(
                 points_3d, self.barrett_layer.vertice_face_areas, use_torch=True)
             self.refined_handpose = points_3d.cpu().data.numpy()
             points_3d_area = points_3d_area.to(self.device)
-            self.calculate_generator_losses(points_3d, points_3d_area, R, T, translation_in, hand_configuration_unconstrained)
+            self.calculate_generator_losses(
+                points_3d, points_3d_area, R, T, translation_in, hand_configuration_unconstrained)
         else:
             points_3d_concatenated, faces_concatenated = util.concatenate_barret_vertices_and_faces(
                 points_3d, self.barrett_layer.gripper_faces, use_torch=True)
@@ -554,7 +564,8 @@ class Model(BaseModel):
 
     def gradient_penalty_D(self, fake_input_D, real_input_D):
         # interpolate sample
-        alpha = torch.rand(self.batch_size, fake_input_D.shape[1]).to(self.device)
+        alpha = torch.rand(
+            self.batch_size, fake_input_D.shape[1]).to(self.device)
         alpha.requires_grad = True
         interpolated = alpha * real_input_D + (1 - alpha) * fake_input_D
         interpolated_prob = self.discriminator(interpolated)
@@ -590,7 +601,8 @@ class Model(BaseModel):
             ('g contact loss', self.loss_g_contactloss.cpu().data.numpy()))
         losses.append(
             ('g intersection loss',  self.loss_g_interpenetration.cpu().data.numpy()))
-        losses.append(('g orientation loss', self.loss_g_orientation .cpu().data.numpy()))
+        losses.append(
+            ('g orientation loss', self.loss_g_orientation .cpu().data.numpy()))
         if not self.opt.no_discriminator:
             losses.append(('g fake', self.loss_g_fake.cpu().data.numpy()))
             losses.append(('d real', self.loss_d_real.cpu().data.numpy()))
@@ -610,7 +622,8 @@ class Model(BaseModel):
             ('g contact loss', self.loss_g_contactloss.cpu().data.numpy()))
         losses.append(
             ('g intersection loss',  self.loss_g_interpenetration.cpu().data.numpy()))
-        losses.append(('g orientation loss', self.loss_g_orientation .cpu().data.numpy()))
+        losses.append(
+            ('g orientation loss', self.loss_g_orientation .cpu().data.numpy()))
         if not self.opt.no_discriminator:
             losses.append(('g fake', self.loss_g_fake.cpu().data.numpy()))
         return OrderedDict(losses)
@@ -673,22 +686,31 @@ class Model(BaseModel):
 
     def save(self, label, epoch):
         # save networks and optimizers
-        self.save_network(self.image_encoder_and_grasp_predictor, 'image_encoder_and_grasp_predictor', label, epoch)
-        self.save_optimizer(self.optimizer_image_enc_and_grasp_predictor, 'image_encoder_and_grasp_predictor', label)
-        self.save_network(self.grasp_generator, 'grasp_generator', label, epoch)
-        self.save_optimizer(self.optimizer_grasp_generator, 'grasp_generator', label)
+        self.save_network(self.image_encoder_and_grasp_predictor,
+                          'image_encoder_and_grasp_predictor', label, epoch)
+        self.save_optimizer(self.optimizer_image_enc_and_grasp_predictor,
+                            'image_encoder_and_grasp_predictor', label)
+        self.save_network(self.grasp_generator,
+                          'grasp_generator', label, epoch)
+        self.save_optimizer(self.optimizer_grasp_generator,
+                            'grasp_generator', label)
         if not self.opt.no_discriminator:
-            self.save_network(self.discriminator, 'discriminator', label, epoch)
-            self.save_optimizer(self.optimizer_discriminator, 'discriminator', label)
+            self.save_network(self.discriminator,
+                              'discriminator', label, epoch)
+            self.save_optimizer(self.optimizer_discriminator,
+                                'discriminator', label)
 
     def load(self):
         load_epoch = self.opt.load_epoch
 
         # load image_encoder
-        self.load_network(self.image_encoder_and_grasp_predictor, 'image_encoder_and_grasp_predictor', load_epoch, self.device)
-        self.load_network(self.grasp_generator, 'grasp_generator', load_epoch, self.device)
+        self.load_network(self.image_encoder_and_grasp_predictor,
+                          'image_encoder_and_grasp_predictor', load_epoch, self.device)
+        self.load_network(self.grasp_generator,
+                          'grasp_generator', load_epoch, self.device)
         if not self.opt.no_discriminator:
-            self.load_network(self.discriminator, 'discriminator', load_epoch, self.device)
+            self.load_network(self.discriminator,
+                              'discriminator', load_epoch, self.device)
 
         if self.is_train:
             # load optimizers
@@ -731,5 +753,6 @@ class Model(BaseModel):
                       (self.current_lr_discriminator))
 
     def f1_score(self):
-        f1_score = util.f1_score(self.true_positive, self.true_negative, self.false_positive, self.false_negative)
+        f1_score = util.f1_score(
+            self.true_positive, self.true_negative, self.false_positive, self.false_negative)
         return f1_score.cpu().numpy()

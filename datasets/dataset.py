@@ -12,10 +12,10 @@ class DatasetFactory:
 
     @staticmethod
     def get_by_name(dataset_name, opt, mode):
-        if dataset_name == 'ycb_synthetic_one_object':
+        if dataset_name == 'ycb':
             from datasets.ycb_synthetic_oneobject import Dataset
             dataset = Dataset(opt, mode)
-        elif dataset_name == 'egad_synthetic_one_object':
+        elif dataset_name == 'egad':
             from datasets.egad_synthetic_oneobject import Dataset
             dataset = Dataset(opt, mode)
         else:
@@ -73,7 +73,8 @@ class DatasetBase(data.Dataset):
         rotated_verts = torch.matmul(
             random_rot, torch.FloatTensor(self.all_object_vertices[id_obj]).T).T
         rotated_verts = rotated_verts.unsqueeze(0).cuda()
-        faces = torch.LongTensor(self.all_object_faces[id_obj]).unsqueeze(0).cuda()
+        faces = torch.LongTensor(
+            self.all_object_faces[id_obj]).unsqueeze(0).cuda()
         textures = torch.FloatTensor(self.all_object_textures[id_obj]).cuda()
 
         # Reshape as needed for renderer:

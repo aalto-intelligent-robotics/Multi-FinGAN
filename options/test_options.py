@@ -55,8 +55,10 @@ class TestOptions(BaseOptions):
             self.get_set_gpus()
             if self.opt.test_set == "ycb":
                 self.opt.object_mesh_dir = './data/meshes/ycb_meshes/'
+                self.opt.dataset_name = "ycb"
             elif self.opt.test_set == "egad":
                 self.opt.object_mesh_dir = './data/meshes/egad_val_set_meshes/'
+                self.opt.dataset_name = "egad"
 
         self.opt.is_train = False
         self.opt.load_network = True
